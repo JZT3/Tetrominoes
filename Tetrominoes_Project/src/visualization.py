@@ -1,5 +1,5 @@
 import pygame
-from typing import Tuple
+from typing import Tuple, List
 
 def initialize_window(size: Tuple[int, int]) -> pygame.Surface:
     """
@@ -13,7 +13,21 @@ def initialize_window(size: Tuple[int, int]) -> pygame.Surface:
     """
     pygame.init()
     surface = pygame.display.set_mode(size)
+    pygame.display.set_caption('Tetris Visualization')
     return surface
+
+
+def draw_background(surface: pygame.Surface, color: Tuple[int, int, int], rect: pygame.Rect):
+    """
+    Draws a rectangle on the given surface.
+    
+    Parameters:
+        surface (pygame.Surface): The surface to draw on.
+        color (Tuple[int, int, int]): The color of the rectangle (R, G, B).
+        rect (pygame.Rect): The rectangle dimensions (x, y, width, height).
+    """
+    pygame.draw.rect(surface, color, rect)
+
 
 def draw_grid(surface: pygame.Surface, grid: 'Grid') -> None:
     """
@@ -60,3 +74,20 @@ def handle_drag_and_drop(event: pygame.event.Event, tetrominos: List['Tetromino'
     """
     # Drag-and-drop logic
     pass
+
+if __name__ == "__main__":
+    window_size = (800, 600)
+    surface = initialize_window(window_size)
+
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        # Example drawing
+        draw_background(surface, (255, 0, 0), pygame.Rect(50, 50, 50, 50))
+
+        pygame.display.update()
+    
+    pygame.quit()
