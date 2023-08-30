@@ -87,20 +87,15 @@ class ShapeGenerator:
         Returns:
             The rotated shape.
         """
-        rotations_num = random.randint(0, 3)  # 0 to 3 rotations (0, 90, 180, 270 degrees)
+        rotations_num = random.randint(0, 3)  # 0 to 3 rotations
         for _ in range(rotations_num):
-            rotated_shape = [] 
-            
-            # Loop through each row and column to rotate the shape 90 degrees clockwise
-            for i in range(3):
-                new_row = []
-                for j in range(3):
-                    new_row.append(shape[2 - j][i])
-            
-            rotated_shape.append(new_row)
-            shape = rotated_shape        
-        
+            shape = [[shape[2 - j][i] for j in range(3)] for i in range(3)]
         return shape
+    
+    def get_random_rotated_shape(self) -> List[List[int]]:
+        shape = self.get_random_shape()
+        rotated_shape = self.apply_random_rotation(shape)
+        return rotated_shape
     
 
 if __name__ == "__main__":
@@ -108,6 +103,6 @@ if __name__ == "__main__":
     print(f"The maximum number of unique contiguous shapes in a 3x3 grid is {len(shape_gen.unique_shapes)}.")
     
     # Display all unique shapes in their 2D array representation
-    for shape_bitmask in shape_gen.unique_shapes:
-        shape_2D = ShapeGenerator.bitmask_to_2D(shape_bitmask)
-        print(shape_2D)
+    for _ in range(5):
+        shape = shape_gen.get_random_rotated_shape()
+        print(shape)
