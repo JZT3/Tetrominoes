@@ -71,8 +71,8 @@ class Visualization:
             x_offset = start_x + (idx * (standard_shape_size + gap))
             
             # Calculate the bounding box dimensions for each shape
-            bounding_box_width = len(max(tetromino, key=len))
-            bounding_box_height = len(tetromino)
+            bounding_box_width = 3
+            bounding_box_height = 3
             
             # Calculate the scaling factors
             width_scale = standard_shape_size / bounding_box_width
@@ -115,8 +115,8 @@ class Visualization:
 
             # Initialize the static shapes in the hotbar if they're not set
             if self.static_shapes_in_hotbar is None:
-                self.static_shapes_in_hotbar = [self.shape_gen.get_random_rotated_shape() for _ in range(3)]
-            
+                self.static_shapes_in_hotbar = [self.shape_gen.get_random_shape() for _ in range(3)]
+
             # Draw the hotbar using static shapes
             self.draw_hotbar(self.static_shapes_in_hotbar, grid_bottom)
             

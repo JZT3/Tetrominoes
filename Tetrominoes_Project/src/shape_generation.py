@@ -64,13 +64,13 @@ class ShapeGenerator:
 
     def is_connected(self, bitmask: int) -> bool:
         """
-        Check if a shape is a connected component.
+        Check if a shape is a connected component and has no holes.
         
         Args:
             bitmask: The bitmask representing the shape.
             
         Returns:
-            True if the shape is connected, False otherwise.
+            True if the shape is connected and has no holes, False otherwise.
         """
         grid = self.bitmask_to_grid(bitmask)
         first_filled_cell = self.find_first_filled_cell(grid)
@@ -85,11 +85,19 @@ class ShapeGenerator:
                 x, y = current
                 for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                     new_x, new_y = x + dx, y + dy
-                    if 0 <= new_x < 3 and 0 <= new_y < 3 and grid[new_x][new_y] == 1:
-                        to_visit.append((new_x, new_y))
-            
+                    if 0 <= new_x < 3 and 0 <= new_y < 3:
+                        if grid[new_x][new_y] == 1:
+                            to_visit.append((new_x, new_y))
+                        elif (new_x, new_y) not in visited:
+                            # Check if this empty cell is reachable from an edge; if not, it's a hole
+                            for edge_dx, edge_dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                                edge_x, edge_y = new_x + edge_dx, new_y + edge_dy
+                                if edge_x < 0 or edge_x >= 3 or edge_y < 0 or edge_y >= 3:
+                                    break  # This empty cell is reachable from an edge, so it's not a hole
+                            else:
+                                return False  # This empty cell is not reachable from an edge; it's a hole
+
             return len(visited) == bin(bitmask).count('1')
-          
         return False
     
     def bitmask_to_grid(self, bitmask: int) -> List[List[int]]:
