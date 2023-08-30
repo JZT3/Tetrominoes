@@ -1,4 +1,5 @@
 from typing import Set, Tuple, List
+from collections import deque
 import random
 
 class ShapeGenerator:
@@ -53,7 +54,7 @@ class ShapeGenerator:
     def is_contiguous(shape: List[List[int]]) -> bool:
         """Check if a shape is contiguous."""
         visited = set()
-        to_visit = []
+        to_visit = deque()
 
         # Find the first filled cell
         for i in range(3):
@@ -64,9 +65,9 @@ class ShapeGenerator:
             if to_visit:
                 break
 
-        # Depth-First Search to check contiguity
+        # Breadth-First Search to check contiguity
         while to_visit:
-            x, y = to_visit.pop()
+            x, y = to_visit.popleft()
             if (x, y) in visited:
                 continue
             visited.add((x, y))
@@ -92,7 +93,13 @@ class ShapeGenerator:
         for _ in range(4):  # Only 4 rotations are possible for any shape
             current_shape = [[current_shape[2 - j][i] for j in range(3)] for i in range(3)]
             normalized_shape = cls.shape_normalization(current_shape)
-            unique_rotations.add(cls.shape_to_tuple(normalized_shape))
+            normalized_tuple = cls.shape_to_tuple(normalized_shape)
+            
+            # If the normalized form is already in the set, stop the rotation process
+            if normalized_tuple in unique_rotations:
+                break
+            
+            unique_rotations.add(normalized_tuple)
 
         # Convert back to List[List[int]] format
         unique_rotations = [list(map(list, zip(*[iter(tpl)]*3))) for tpl in unique_rotations]
@@ -101,16 +108,28 @@ class ShapeGenerator:
 
 
     @classmethod
-    def shape_normalization(cls, shape: List[List[int]]) -> List[List[int]]:
-        """Translate a shape to its canonical form."""
-        rows = [row for row in shape if any(cell == 1 for cell in row)]
-        if not rows:
-            return [[0, 0, 0] for _ in range(3)]
+    def shape_normalization(cls, shape: List[List[int]]) -> List[Tuple[int, ...]]:
+        """Generate all unique translations of a shape within a 3x3 grid."""
         
-        min_col = min(col for row in shape for col, cell in enumerate(row) if cell == 1)
-        normalized_rows = [row[min_col:] + row[:min_col] for row in rows]
-        return normalized_rows + [[0, 0, 0] for _ in range(3 - len(rows))]
-
+        # Pre-condition to enforce 3x3 shape
+        if len(shape) != 3 or any(len(row) != 3 for row in shape):
+            return []
+        
+        unique_translations = set()
+        
+        for i in range(3):
+            for j in range(3):
+                # Translate the shape by (i, j)
+                translated_shape = [[0 for _ in range(3)] for _ in range(3)]
+                for x in range(3):
+                    for y in range(3):
+                        new_x, new_y = (x + i) % 3, (y + j) % 3
+                        translated_shape[new_x][new_y] = shape[x][y]
+                
+                # Convert to tuple and add to unique_translations
+                unique_translations.add(cls.shape_to_tuple(translated_shape))
+                
+        return list(unique_translations)
 
     @classmethod
     def shape_to_tuple(cls, shape: List[List[int]]) -> Tuple[int, ...]:
