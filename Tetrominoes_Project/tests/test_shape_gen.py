@@ -1,8 +1,7 @@
 import sys
 sys.path.append('Z:\Tetrominoes_Project\src')
 import unittest
-from shape_generation import ShapeGenerator
-
+from src.shape_generation import ShapeGenerator
 
 
 class TestShapeGeneration(unittest.TestCase):

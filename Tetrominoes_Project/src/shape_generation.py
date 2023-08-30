@@ -81,9 +81,14 @@ class ShapeGenerator:
     @classmethod
     def rotation_permutations(cls, shape: List[List[int]]) -> List[List[int]]:
         """Generate all unique rotations of a shape."""
+        
+        # Pre-condition to enforce 3x3 shape
+        if len(shape) != 3 or any(len(row) != 3 for row in shape):
+            return []
+        
         unique_rotations: Set[Tuple[int, ...]] = set()
-
         current_shape = shape
+        
         for _ in range(4):  # Only 4 rotations are possible for any shape
             current_shape = [[current_shape[2 - j][i] for j in range(3)] for i in range(3)]
             normalized_shape = cls.shape_normalization(current_shape)
@@ -93,6 +98,7 @@ class ShapeGenerator:
         unique_rotations = [list(map(list, zip(*[iter(tpl)]*3))) for tpl in unique_rotations]
         
         return unique_rotations
+
 
     @classmethod
     def shape_normalization(cls, shape: List[List[int]]) -> List[List[int]]:
@@ -143,16 +149,6 @@ class ShapeGenerator:
 
 
 if __name__ == "__main__":
-    """
-    I want to find the theoretical max number of possible shape configurations
-    inside a 3x3 grid. There are 2^9 (512) possibilities.
-
-    Each cell has 2 choices 0 or 1. There are 9 cells in a 3x3 grid.
-    total configurations = 2^9.
-    
-    Then I want to filter out all the non-contiguous shapes.
-    I do this by considering translations and rotations
-    """
     unique_shapes: Set[Tuple[int, ...]] = set()
 
     # Loop over all 512 possible configurations
