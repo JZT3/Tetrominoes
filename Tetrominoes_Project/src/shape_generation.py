@@ -1,5 +1,4 @@
-from typing import Set, Tuple, List
-from collections import deque
+from typing import Set, List
 import random
 
 class ShapeGenerator:
@@ -7,48 +6,108 @@ class ShapeGenerator:
     This class is responsible for Tetromino shape generation and checking the uniqueness
 
     """
-    
-    @staticmethod
-    def is_connected(bitmask: int) -> bool:
-        # TODO: Implement the connectivity check logic here
-        # This function should return True if the shape represented by the bitmask is connected
-        return True  # Placeholder
 
-    @classmethod
-    def generate_shapes(cls) -> Set[int]:
+    def __init__(self):
+        self.unique_shapes = self.generate_shapes()
+
+
+    @staticmethod
+    def generate_shapes() -> Set[int]:
         unique_shapes = set()
 
         for bitmask in range(1, 2 ** 9):
-            if bin(bitmask).count('1') == 3 and cls.is_connected(bitmask):
+            if bin(bitmask).count('1') == 3 and ShapeGenerator.is_connected(bitmask):
                 unique_shapes.add(bitmask)
 
         return unique_shapes
 
-    @classmethod
-    def generate_random_shape(cls) -> List[List[int]]:
-        # TODO: Generate a random bitmask and convert it to a 2D list representation
-        pass
 
-    @classmethod
-    def unique_shape_check(cls, num_of_shapes: int) -> List[List[List[int]]]:
-        # TODO: Generate unique shapes up to 'num_of_shapes' using bitmasks
-        # Then convert them to 2D list format to return
-        pass
+    @staticmethod
+    def is_connected(bitmask: int) -> bool:
+        grid = [[0, 0, 0] for _ in range(3)]
+        first_filled_cell = None
+        for i in range(3):
+            for j in range(3):
+                cell_value = (bitmask >> (3 * i + j)) & 1
+                grid[i][j] = cell_value
+                if cell_value == 1 and first_filled_cell is None:
+                    first_filled_cell = 3 * i + j  # Convert to 1D index
 
-    @classmethod
-    def shape_normalization(cls, shape: List[List[int]]) -> List[List[int]]:
-        # TODO: Implement the normalization logic here
-        pass
+        # If there are no filled cells, the shape is not connected
+        if first_filled_cell is None:
+            return False
 
-    @classmethod
-    def rotation_permutations(cls, shape: List[List[int]]) -> List[List[int]]:
-        # TODO: Implement the rotation logic here
-        pass
+        visited = set()
+        to_visit = [first_filled_cell]
 
-    @classmethod
-    def shape_to_tuple(cls, shape: List[List[int]]) -> Tuple[int, ...]:
-        return tuple(cell for row in shape for cell in row)
+        while to_visit:
+            current = to_visit.pop()
+            if current in visited:
+                continue
+            visited.add(current)
+
+            x, y = divmod(current, 3)  # Convert back to 2D coordinates
+
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                new_x, new_y = x + dx, y + dy
+                if 0 <= new_x < 3 and 0 <= new_y < 3 and grid[new_x][new_y] == 1:
+                    to_visit.append(3 * new_x + new_y)  # Convert to 1D index
+
+        return len(visited) == bin(bitmask).count('1')
+
+
+
+    def get_random_shape(self) -> List[List[int]]:
+        shape_bitmask = random.choice(list(self.unique_shapes))
+        shape_2D = self.bitmask_to_2D(shape_bitmask)
+        return shape_2D
+
+
+    @staticmethod
+    def bitmask_to_2D(bitmask: int) -> List[List[int]]:
+        shape_2D = []
+        for row in range(3):
+            shape_row = []
+            for col in range(3):
+                bit_position = 3 * row + col
+                cell_value = (bitmask >> bit_position) & 1
+                shape_row.append(cell_value)
+            shape_2D.append(shape_row)
+        return shape_2D
+    
+
+    @staticmethod
+    def apply_random_rotation(shape: List[List[int]]) -> List[List[int]]:
+        """
+        Applys a random number of 90-degree rotations to the shape.
+
+        Args:
+            shape: The 2D array representing the shape.
+
+        Returns:
+            The rotated shape.
+        """
+        rotations_num = random.randint(0, 3)  # 0 to 3 rotations (0, 90, 180, 270 degrees)
+        for _ in range(rotations_num):
+            rotated_shape = [] 
+            
+            # Loop through each row and column to rotate the shape 90 degrees clockwise
+            for i in range(3):
+                new_row = []
+                for j in range(3):
+                    new_row.append(shape[2 - j][i])
+            
+            rotated_shape.append(new_row)
+            shape = rotated_shape        
+        
+        return shape
+    
 
 if __name__ == "__main__":
-    unique_shapes = ShapeGenerator.generate_shapes()
-    print(f"The maximum number of unique contiguous shapes in a 3x3 grid is {len(unique_shapes)}.")
+    shape_gen = ShapeGenerator()
+    print(f"The maximum number of unique contiguous shapes in a 3x3 grid is {len(shape_gen.unique_shapes)}.")
+    
+    # Display all unique shapes in their 2D array representation
+    for shape_bitmask in shape_gen.unique_shapes:
+        shape_2D = ShapeGenerator.bitmask_to_2D(shape_bitmask)
+        print(shape_2D)
