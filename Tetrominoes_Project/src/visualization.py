@@ -56,28 +56,39 @@ class Visualization:
 
 
     def draw_hotbar(self, tetrominos: List[List[List[int]]], grid_bottom: int):
-        mini_grid_size = 60  # Increased size
-        gap = 20  # Increased gap
+        standard_shape_size = 30
+        gap = 10
         num_tetrominos = len(tetrominos)
 
-        hotbar_width = (num_tetrominos * mini_grid_size) + ((num_tetrominos - 1) * gap)
+        hotbar_width = (num_tetrominos * standard_shape_size) + ((num_tetrominos - 1) * gap)
         start_x = (self.grid_size * self.cell_size - hotbar_width) // 2
-        start_y = grid_bottom + 20  # A bit more space below the grid
+        start_y = grid_bottom + 10
 
-        pygame.draw.rect(self.surface, (200, 200, 200), (start_x, start_y, hotbar_width, mini_grid_size + 40))
-    
+        # Fill the background of the hotbar 
+        self.surface.fill((200, 200, 200), (start_x, start_y, hotbar_width, standard_shape_size + 20))
+
         for idx, tetromino in enumerate(tetrominos):
-            x_offset = start_x + (idx * (mini_grid_size + gap))
+            x_offset = start_x + (idx * (standard_shape_size + gap))
+            
+            # Calculate the bounding box dimensions for each shape
+            bounding_box_width = len(max(tetromino, key=len))
+            bounding_box_height = len(tetromino)
+            
+            # Calculate the scaling factors
+            width_scale = standard_shape_size / bounding_box_width
+            height_scale = standard_shape_size / bounding_box_height
+            
             for i, row in enumerate(tetromino):
                 for j, cell in enumerate(row):
                     if cell == 1:
                         color = (255, 255, 255)
-                        rect = pygame.Rect(x_offset + j * mini_grid_size // 3,
-                                            start_y + 10 + i * mini_grid_size // 3,
-                                            mini_grid_size // 3,
-                                            mini_grid_size // 3)
-                        pygame.draw.rect(self.surface, color, rect)
-
+                        rect = pygame.Rect(
+                            x_offset + int(j * width_scale),
+                            start_y + 10 + int(i * height_scale),
+                            int(width_scale),
+                            int(height_scale)
+                        )
+                        self.surface.fill(color, rect)
 
 
     def handle_drag_and_drop(self, event: pygame.event.Event, tetrominos: List['Tetromino'], grid: 'Grid') -> None:

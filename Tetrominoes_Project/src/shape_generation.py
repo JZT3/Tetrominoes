@@ -1,67 +1,134 @@
-from typing import Set, List
+from typing import Set, List, Tuple
 import random
 
 class ShapeGenerator:
     """
     This class is responsible for Tetromino shape generation and checking the uniqueness
-
     """
 
     def __init__(self):
         self.unique_shapes = self.generate_shapes()
+        self.unique_shapes_2D = [self.bitmask_to_2D(shape) for shape in self.unique_shapes]
+        self.bounding_boxes = self.calculate_bounding_boxes()
 
 
-    @staticmethod
-    def generate_shapes() -> Set[int]:
+    def generate_shapes(self) -> Set[int]:
+        """
+        Generates all unique shapes and returns a set of shapes in canonical forms.
+        """
         unique_shapes = set()
 
         for bitmask in range(1, 2 ** 9):
-            if bin(bitmask).count('1') == 3 and ShapeGenerator.is_connected(bitmask):
-                unique_shapes.add(bitmask)
+            canonical_form = self.get_canonical_form(bitmask)
+            if self.is_connected(canonical_form):  # Using self to call instance method
+                unique_shapes.add(canonical_form)
 
         return unique_shapes
 
 
     @staticmethod
-    def is_connected(bitmask: int) -> bool:
+    def get_canonical_form(bitmask: int) -> int:
+        """
+        Generates all the rotations of a shape and returns the canonical (smallest) form.
+        """
+        rotations = [bitmask]
+        for _ in range(3):  # Three more rotations to consider
+            bitmask = ShapeGenerator.rotate_bitmask(bitmask)
+            rotations.append(bitmask)
+
+        return min(rotations)
+
+
+    @staticmethod
+    def rotate_bitmask(bitmask: int) -> int:
+        """
+        Rotates the shape represented by a bitmask 90 degrees clockwise.
+        """
         grid = [[0, 0, 0] for _ in range(3)]
-        first_filled_cell = None
         for i in range(3):
             for j in range(3):
                 cell_value = (bitmask >> (3 * i + j)) & 1
                 grid[i][j] = cell_value
-                if cell_value == 1 and first_filled_cell is None:
-                    first_filled_cell = 3 * i + j  # Convert to 1D index
+        
+        rotated_grid = [[0, 0, 0] for _ in range(3)]
+        for i in range(3):
+            for j in range(3):
+                rotated_grid[j][2 - i] = grid[i][j]
 
-        # If there are no filled cells, the shape is not connected
-        if first_filled_cell is None:
-            return False
+        rotated_bitmask = 0
+        for i in range(3):
+            for j in range(3):
+                rotated_bitmask |= rotated_grid[i][j] << (3 * i + j)
 
-        visited = set()
-        to_visit = [first_filled_cell]
+        return rotated_bitmask
 
-        while to_visit:
-            current = to_visit.pop()
-            if current in visited:
-                continue
-            visited.add(current)
-
-            x, y = divmod(current, 3)  # Convert back to 2D coordinates
-
-            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                new_x, new_y = x + dx, y + dy
-                if 0 <= new_x < 3 and 0 <= new_y < 3 and grid[new_x][new_y] == 1:
-                    to_visit.append(3 * new_x + new_y)  # Convert to 1D index
-
-        return len(visited) == bin(bitmask).count('1')
-
-
+    def is_connected(self, bitmask: int) -> bool:
+        """
+        Check if a shape is a connected component.
+        
+        Args:
+            bitmask: The bitmask representing the shape.
+            
+        Returns:
+            True if the shape is connected, False otherwise.
+        """
+        grid = self.bitmask_to_grid(bitmask)
+        first_filled_cell = self.find_first_filled_cell(grid)
+        if first_filled_cell is not None:
+            visited = set()
+            to_visit = [first_filled_cell]
+            while to_visit:
+                current = to_visit.pop()
+                if current in visited:
+                    continue
+                visited.add(current)
+                x, y = current
+                for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                    new_x, new_y = x + dx, y + dy
+                    if 0 <= new_x < 3 and 0 <= new_y < 3 and grid[new_x][new_y] == 1:
+                        to_visit.append((new_x, new_y))
+            
+            return len(visited) == bin(bitmask).count('1')
+          
+        return False
+    
+    def bitmask_to_grid(self, bitmask: int) -> List[List[int]]:
+        """
+        Convert a bitmask to a 3x3 grid.
+        
+        Args:
+            bitmask: The bitmask representing the shape.
+            
+        Returns:
+            The 3x3 grid representing the shape.
+        """
+        grid = [[0, 0, 0] for _ in range(3)]
+        for i in range(3):
+            for j in range(3):
+                cell_value = (bitmask >> (3 * i + j)) & 1
+                grid[i][j] = cell_value
+        return grid
+    
+    def find_first_filled_cell(self, grid: List[List[int]]) -> [Tuple[int, int]]:
+        """
+        Find the first filled cell in a 3x3 grid.
+        
+        Args:
+            grid: The 3x3 grid representing the shape.
+            
+        Returns:
+            The coordinates (i, j) of the first filled cell, or None if no cell is filled.
+        """
+        for i in range(3):
+            for j in range(3):
+                if grid[i][j] == 1:
+                    return i, j
+        return None
 
     def get_random_shape(self) -> List[List[int]]:
         shape_bitmask = random.choice(list(self.unique_shapes))
         shape_2D = self.bitmask_to_2D(shape_bitmask)
         return shape_2D
-
 
     @staticmethod
     def bitmask_to_2D(bitmask: int) -> List[List[int]]:
@@ -74,35 +141,27 @@ class ShapeGenerator:
                 shape_row.append(cell_value)
             shape_2D.append(shape_row)
         return shape_2D
-    
 
-    @staticmethod
-    def apply_random_rotation(shape: List[List[int]]) -> List[List[int]]:
+
+    def calculate_bounding_boxes(self) -> dict:
         """
-        Applys a random number of 90-degree rotations to the shape.
-
-        Args:
-            shape: The 2D array representing the shape.
-
+        Calculate the bounding boxes for all unique shapes.
+        
         Returns:
-            The rotated shape.
+            A dictionary mapping each unique shape to its bounding box dimensions.
         """
-        rotations_num = random.randint(0, 3)  # 0 to 3 rotations
-        for _ in range(rotations_num):
-            shape = [[shape[2 - j][i] for j in range(3)] for i in range(3)]
-        return shape
-    
-    def get_random_rotated_shape(self) -> List[List[int]]:
-        shape = self.get_random_shape()
-        rotated_shape = self.apply_random_rotation(shape)
-        return rotated_shape
-    
+        bounding_boxes = {}
+        for shape in self.unique_shapes:
+            shape_2D = self.bitmask_to_2D(shape)
+            rows = len(shape_2D)
+            cols = len(max(shape_2D, key=len))
+            bounding_boxes[shape] = (rows, cols)
+        return bounding_boxes
 
 if __name__ == "__main__":
     shape_gen = ShapeGenerator()
     print(f"The maximum number of unique contiguous shapes in a 3x3 grid is {len(shape_gen.unique_shapes)}.")
-    
     # Display all unique shapes in their 2D array representation
     for _ in range(5):
-        shape = shape_gen.get_random_rotated_shape()
+        shape = shape_gen.get_random_shape()
         print(shape)
