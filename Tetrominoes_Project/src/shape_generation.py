@@ -168,11 +168,32 @@ class ShapeGenerator:
             A dictionary mapping each unique shape to its bounding box dimensions.
         """
         bounding_boxes = {}
-        for shape in self.unique_shapes:
-            shape_2D = self.bitmask_to_2D(shape)
-            rows = len(shape_2D)
-            cols = len(max(shape_2D, key=len))
-            bounding_boxes[shape] = (rows, cols)
+
+        for shape_2D in self.unique_shapes_2D:
+                # Convert the 2D shape back to its bitmask representation
+                shape_bitmask = 0
+                for row in range(3):
+                    for col in range(3):
+                        bit_position = 3 * row + col
+                        cell_value = shape_2D[row][col]
+                        shape_bitmask |= cell_value << bit_position
+                
+                # Calculate bounding box dimensions
+                filled_cells = []
+                for i, row in enumerate(shape_2D):
+                    for j, cell in enumerate(row):
+                        if cell == 1:
+                            filled_cells.append((i, j))
+                                            
+                min_row = min(i for i, j in filled_cells)
+                max_row = max(i for i, j in filled_cells)
+                min_col = min(j for i, j in filled_cells)
+                max_col = max(j for i, j in filled_cells)
+
+                bounding_box_dimensions = (max_row - min_row + 1, max_col - min_col + 1)
+
+                bounding_boxes[shape_bitmask] = bounding_box_dimensions
+
         return bounding_boxes
 
 if __name__ == "__main__":
