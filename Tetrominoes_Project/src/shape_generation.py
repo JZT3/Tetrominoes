@@ -7,23 +7,21 @@ class ShapeGenerator:
     """
 
     def __init__(self):
-        self.unique_shapes = self.generate_shapes()
-        self.unique_shapes_2D = [self.bitmask_to_2D(shape) for shape in self.unique_shapes]
+        self.generate_shapes()
+        self.unique_shapes_2D = [self.bitmask_to_2D(shape) for shape in self.generated_shapes]
         self.bounding_boxes = self.calculate_bounding_boxes()
 
 
-    def generate_shapes(self) -> Set[int]:
+    def generate_shapes(self) -> None:
         """
         Generates all unique shapes and returns a set of shapes in canonical forms.
         """
-        unique_shapes = set()
+        self.generated_shapes = set()
 
-        for bitmask in range(1, 2 ** 9):
-            canonical_form = self.get_canonical_form(bitmask)
-            if self.is_connected(canonical_form):  # Using self to call instance method
-                unique_shapes.add(canonical_form)
-
-        return unique_shapes
+        for bitmask in range(1, 2 ** 9):  # Loop through all possible 3x3 grids
+            canonical_form = self.get_canonical_form(bitmask) # Find the canonical form of the shape
+            if self.is_connected(canonical_form):  # Check if the shape is a valid connected shape
+                self.generated_shapes.add(canonical_form)
 
 
     @staticmethod
@@ -143,7 +141,7 @@ class ShapeGenerator:
         return None
 
     def get_random_shape(self) -> List[List[int]]:
-        shape_bitmask = random.choice(list(self.unique_shapes))
+        shape_bitmask = random.choice(list(self.generated_shapes))
         shape_2D = self.bitmask_to_2D(shape_bitmask)
         return shape_2D
 
@@ -184,7 +182,7 @@ class ShapeGenerator:
                     for j, cell in enumerate(row):
                         if cell == 1:
                             filled_cells.append((i, j))
-                                            
+
                 min_row = min(i for i, j in filled_cells)
                 max_row = max(i for i, j in filled_cells)
                 min_col = min(j for i, j in filled_cells)
@@ -198,7 +196,7 @@ class ShapeGenerator:
 
 if __name__ == "__main__":
     shape_gen = ShapeGenerator()
-    print(f"The maximum number of unique contiguous shapes in a 3x3 grid is {len(shape_gen.unique_shapes)}.")
+    print(f"The maximum number of unique contiguous shapes in a 3x3 grid is {len(shape_gen.generated_shapes)}.")
     # Display all unique shapes in their 2D array representation
     for _ in range(5):
         shape = shape_gen.get_random_shape()
