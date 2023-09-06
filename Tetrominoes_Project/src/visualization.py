@@ -1,5 +1,6 @@
 import pygame
 from shape_generation import ShapeGenerator
+from tetromino_functionality import Tetromino
 from typing import Tuple, List
 
 class Visualization:
@@ -14,7 +15,9 @@ class Visualization:
         self.grid = [[0] * grid_size for _ in range(grid_size)]
         self.grid_x = (window_size[0] - grid_size * cell_size) // 2
         self.grid_y = (window_size[1] - grid_size * cell_size) // 2
-        self.static_shapes_in_hotbar = None
+        self.hotbar = [self.shape_gen.get_random_shape() for _ in range(3)]
+        self.selected_tetromino: Optional[Tetromino] = None
+
 
     def draw_background(self, color: Tuple[int, int, int]) -> None:
         """
@@ -90,36 +93,88 @@ class Visualization:
                         )
                         self.surface.fill(color, rect)
 
-
-    def handle_drag_and_drop(self, event: pygame.event.Event, tetrominos: List['Tetromino'], grid: 'Grid') -> None:
+    def update_grid_with_tetromino(self, tetromino: Tetromino) -> None:
         """
-        Handles the drag-and-drop functionality.
+        Updates the grid to reflect the position of the Tetromino.
         
         Parameters:
-            event: The Pygame event to handle.
-            tetrominos: List of Tetrominos available for placing.
-            grid: The Grid object to place Tetrominos on.
+            tetromino (Tetromino): The Tetromino object to place on the grid.
         """
-        # Drag-and-drop logic
-        pass
+        # Clear the grid
+        self.grid = [[0] * self.grid_size for _ in range(self.grid_size)]
+
+        for i, row in enumerate(tetromino.get_shape()):
+            for j, cell in enumerate(row):
+                if cell == 1:
+                    x, y = tetromino.x + j, tetromino.y + i
+                    if 0 <= x < self.grid_size and 0 <= y < self.grid_size:
+                        self.grid[y][x] = 1
+
+    def handle_action(self, key):
+        if not self.selected_tetromino:
+            return
+        
+        actions = {
+            # Movement Keys
+            pygame.K_a: self.selected_tetromino.move_left,
+            pygame.K_d: self.selected_tetromino.move_right,
+            pygame.K_s: self.selected_tetromino.move_down,
+            pygame.K_w: self.selected_tetromino.move_up,
+            pygame.K_q: self.selected_tetromino.rotate_counter_clockwise,
+            pygame.K_e: self.selected_tetromino.rotate_clockwise,
+            pygame.K_SPACE: self.selected_tetromino.set_in_place,
+            
+            # Hotbar keys
+            pygame.K_1: 1,
+            pygame.K_KP1: 1,
+            pygame.K_2: 2,
+            pygame.K_KP2: 2,
+            pygame.K_3: 3,
+            pygame.K_KP3: 3,
+        }
+        if key in actions:
+            actions[key](self.grid)
+
 
     def run(self):
         running = True
+        
+        hotbar_keys = {
+            pygame.K_1: 0,
+            pygame.K_KP1: 0,
+            pygame.K_2: 1,
+            pygame.K_KP2: 1,
+            pygame.K_3: 2,
+            pygame.K_KP3: 2,
+        }
+        
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key in hotbar_keys:
+                        index = hotbar_keys[event.key]
+                        self.selected_tetromino = Tetromino(self.hotbar[index])
+                    else:
+                        self.handle_action(event.key)
+                        for key, action in key_mapping.items():
+                            if event.key == key:
+                                action(self.grid)
+                                self.update_grid_with_tetromino(self.selected_tetromino)
+                    
+
+                    
+                    if event.key in hotbar_keys:
+                        index = hotbar_keys[event.key]
+                        self.selected_tetromino = Tetromino(self.hotbar[index])
 
             self.draw_background((0, 12, 102))
-            grid_bottom = self.draw_grid()
+            self.draw_grid()
 
-            # Initialize the static shapes in the hotbar if they're not set
-            if self.static_shapes_in_hotbar is None:
-                self.static_shapes_in_hotbar = [self.shape_gen.get_random_shape() for _ in range(3)]
+            # Draw the hotbar and other UI elements
+            self.draw_hotbar(self.hotbar)
 
-            # Draw the hotbar using static shapes
-            self.draw_hotbar(self.static_shapes_in_hotbar, grid_bottom)
-            
             pygame.display.update()
 
         pygame.quit()
