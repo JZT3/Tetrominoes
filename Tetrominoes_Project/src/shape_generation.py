@@ -72,32 +72,41 @@ class ShapeGenerator:
         Returns:
             True if the shape is connected and has no holes, False otherwise.
         """
+        num_ones = bin(bitmask).count('1')
         grid = self.bitmask_to_grid(bitmask)
         first_filled_cell = self.find_first_filled_cell(grid)
+
         if first_filled_cell is not None:
             visited = set()
             to_visit = [first_filled_cell]
+
             while to_visit:
                 current = to_visit.pop()
                 if current in visited:
                     continue
+
                 visited.add(current)
                 x, y = current
+
+                if len(visited) == num_ones:
+                    break
+
                 for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                     new_x, new_y = x + dx, y + dy
-                    if 0 <= new_x < 3 and 0 <= new_y < 3:
+
+                    if (0 <= new_x < 3 and 0 <= new_y < 3) and (new_x, new_y) not in visited:
                         if grid[new_x][new_y] == 1:
                             to_visit.append((new_x, new_y))
-                        elif (new_x, new_y) not in visited:
+                        else:
                             # Check if this empty cell is reachable from an edge; if not, it's a hole
                             for edge_dx, edge_dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
                                 edge_x, edge_y = new_x + edge_dx, new_y + edge_dy
-                                if edge_x < 0 or edge_x >= 3 or edge_y < 0 or edge_y >= 3:
+                                if not (0 <= edge_x < 3 and 0 <= edge_y < 3):
                                     break  # This empty cell is reachable from an edge, so it's not a hole
                             else:
                                 return False  # This empty cell is not reachable from an edge; it's a hole
 
-            return len(visited) == bin(bitmask).count('1')
+            return len(visited) == num_ones
         return False
     
     def bitmask_to_grid(self, bitmask: int) -> List[List[int]]:

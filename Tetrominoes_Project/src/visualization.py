@@ -19,7 +19,7 @@ class Visualization:
         self.selected_tetromino: Optional[Tetromino] = None
         self.grid_center_x = self.grid_x + (self.grid_size * self.cell_size) // 2
         self.grid_center_y = self.grid_y + (self.grid_size * self.cell_size) // 2
-
+        self.cursor_position = 0
 
     def draw_background(self, color: Tuple[int, int, int]) -> None:
         """
@@ -66,7 +66,6 @@ class Visualization:
         num_tetrominos = len(tetrominos)
 
         grid_bottom_y = self.grid_center_y + (self.grid_size * self.cell_size) // 2
-        grid_bottom_x = self.grid_center_x + (self.grid_size * self.cell_size) // 2
 
         # Define bounding box dimensions and scaling factors before using them
         bounding_box_width = 3
@@ -89,6 +88,13 @@ class Visualization:
 
         for idx, tetromino in enumerate(tetrominos):
             x_offset = start_x + (idx * (standard_shape_size + gap))
+            
+            if idx == self.cursor_position:
+                highlight_rect = pygame.Rect(
+                    x_offset - 5, start_y + 5,
+                    standard_shape_size + 10, standard_shape_size + 10
+                )
+                pygame.draw.rect(self.surface, (255, 255, 0), highlight_rect, 3)  # Moved this line inside the loop and condition
 
             for i, row in enumerate(tetromino):
                 for j, cell in enumerate(row):
@@ -101,6 +107,7 @@ class Visualization:
                             int(height_scale)
                         )
                         self.surface.fill(color, rect)
+
 
 
     def update_grid_with_tetromino(self, tetromino: Tetromino) -> None:
