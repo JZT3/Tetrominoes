@@ -17,6 +17,8 @@ class Visualization:
         self.grid_y = (window_size[1] - grid_size * cell_size) // 2
         self.hotbar = [self.shape_gen.get_random_shape() for _ in range(3)]
         self.selected_tetromino: Optional[Tetromino] = None
+        self.grid_center_x = self.grid_x + (self.grid_size * self.cell_size) // 2
+        self.grid_center_y = self.grid_y + (self.grid_size * self.cell_size) // 2
 
 
     def draw_background(self, color: Tuple[int, int, int]) -> None:
@@ -58,29 +60,36 @@ class Visualization:
         pass
 
 
-    def draw_hotbar(self, tetrominos: List[List[List[int]]], grid_bottom: int):
+    def draw_hotbar(self, tetrominos: List[List[List[int]]]):
         standard_shape_size = 30
         gap = 10
         num_tetrominos = len(tetrominos)
 
+        grid_bottom_y = self.grid_center_y + (self.grid_size * self.cell_size) // 2
+        grid_bottom_x = self.grid_center_x + (self.grid_size * self.cell_size) // 2
+
+        # Define bounding box dimensions and scaling factors before using them
+        bounding_box_width = 3
+        bounding_box_height = 3
+        width_scale = standard_shape_size // bounding_box_width
+        height_scale = standard_shape_size // bounding_box_height
+
+        # Calculate total shapes' width including gaps
+        shapes_width = sum(len(t) * width_scale for t in tetrominos)
+
+        # Total hotbar width including shapes and gaps
+        total_width = shapes_width + (len(tetrominos) - 1) * gap
+
         hotbar_width = (num_tetrominos * standard_shape_size) + ((num_tetrominos - 1) * gap)
-        start_x = (self.grid_size * self.cell_size - hotbar_width) // 2
-        start_y = grid_bottom + 10
+        start_x = self.grid_center_x - (total_width // 2)
+        start_y = grid_bottom_y
 
         # Fill the background of the hotbar 
         self.surface.fill((200, 200, 200), (start_x, start_y, hotbar_width, standard_shape_size + 20))
 
         for idx, tetromino in enumerate(tetrominos):
             x_offset = start_x + (idx * (standard_shape_size + gap))
-            
-            # Calculate the bounding box dimensions for each shape
-            bounding_box_width = 3
-            bounding_box_height = 3
-            
-            # Calculate the scaling factors
-            width_scale = standard_shape_size / bounding_box_width
-            height_scale = standard_shape_size / bounding_box_height
-            
+
             for i, row in enumerate(tetromino):
                 for j, cell in enumerate(row):
                     if cell == 1:
@@ -92,6 +101,7 @@ class Visualization:
                             int(height_scale)
                         )
                         self.surface.fill(color, rect)
+
 
     def update_grid_with_tetromino(self, tetromino: Tetromino) -> None:
         """
