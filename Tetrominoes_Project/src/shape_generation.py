@@ -1,5 +1,6 @@
 from typing import Set, List, Tuple
 import random
+import numpy as np
 
 class ShapeGenerator:
     """
@@ -8,7 +9,9 @@ class ShapeGenerator:
 
     def __init__(self):
         self.generate_shapes()
-        self.unique_shapes_2D = [self.bitmask_to_2D(shape) for shape in self.generated_shapes]
+        self.unique_shapes = self.filter_isomorphic_shapes(self.generated_shapes)
+        
+        self.unique_shapes_2D = [self.bitmask_to_2D(shape) for shape in self.unique_shapes]
         self.bounding_boxes = self.calculate_bounding_boxes()
 
 
@@ -193,11 +196,50 @@ class ShapeGenerator:
                 bounding_boxes[shape_bitmask] = bounding_box_dimensions
 
         return bounding_boxes
+    
+    @staticmethod
+    def is_isomorphic(shape1: np.ndarray, shape2:np.ndarray) -> bool:
+        """
+        Check if two 3x3 shapes are isomorphic.
+        
+        Args:
+        - shape1: A 3x3 NumPy array representing the first shape.
+        - shape2: A 3x3 NumPy array representing the second shape.
+        
+        Returns:
+        True if the shapes are isomorphic, False otherwise.
+        """    
+        for _ in range(4):  # Rotate 0, 90, 180, and 270 degrees
+            if np.array_equal(shape1, shape2):
+                return True
+            
+            shape2 = np.rot90(shape2)
+
+        return False 
+
+    def filter_isomorphic_shapes(self, unique_shapes: Set[int]) -> Set[int]:
+        non_isomorphic_shapes = set()
+        shape_list = list(unique_shapes)
+        
+        while shape_list:
+            shape = shape_list.pop()
+            non_isomorphic_shapes.add(shape)
+            
+            shape_2D = np.array(self.bitmask_to_2D(shape))
+            shape_list = [s for s in shape_list if not self.is_isomorphic(shape_2D, np.array(self.bitmask_to_2D(s)))]
+        
+        return non_isomorphic_shapes       
 
 if __name__ == "__main__":
     shape_gen = ShapeGenerator()
-    print(f"The maximum number of unique contiguous shapes in a 3x3 grid is {len(shape_gen.generated_shapes)}.")
-    # Display all unique shapes in their 2D array representation
+    
+    # Use shape_gen.unique_shapes to get the number of unique, non-isomorphic shapes
+    print(f"The maximum number of unique, non-isomorphic contiguous shapes in a 3x3 grid is {len(shape_gen.unique_shapes)}.")
+    
+    # If you want to also display the number of generated shapes before filtering out isomorphic shapes
+    print(f"The number of generated shapes before filtering is {len(shape_gen.generated_shapes)}.")
+    
+    # Display some random unique shapes in their 2D array representation
     for _ in range(5):
         shape = shape_gen.get_random_shape()
         print(shape)
